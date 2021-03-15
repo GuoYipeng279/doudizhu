@@ -320,4 +320,5 @@ class Cards:
             for j in loss:
                 for k in self.table[i][j]:
                     toRem.append(k)
+        # 去除由于出牌造成的可出牌型减少
         self.specific = self.specific.difference(set(toRem))
