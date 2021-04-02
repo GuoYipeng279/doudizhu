@@ -1,6 +1,6 @@
 import tensorflow as tf
 from tensorflow.keras.models import Sequential, Model
-from tensorflow.keras.layers import LSTM, Dense, Dropout, Bidirectional, Embedding, Input
+from tensorflow.keras.layers import Flatten, LSTM, Dense, Dropout, Bidirectional, Embedding, Input, GlobalAveragePooling2D, Conv2D, MaxPooling2D
 from tensorflow import keras
 import numpy as np
 from tensorflow.keras.callbacks import Callback
@@ -8,18 +8,20 @@ from sklearn.metrics import f1_score, precision_score, recall_score, confusion_m
 
 
 class Model:
-    def __init__(self, sequence_length, converter=10, units=64, cell=LSTM, n_layers=2, dropout=0.3, loss="binary_crossentropy", optimizer="rmsprop"):  # noqa E501
+    '''神经网络模型'''
+    def __init__(self, n_layers=2, loss="binary_crossentropy", optimizer="rmsprop"):  # noqa E501
         model = Sequential()
+        model.add(Flatten())
         for i in range(n_layers):
             if i == 0:
                 # first layer
-                model.add(cell(units, return_sequences=True, input_shape=(sequence_length, dim)))
+                model.add(Dense(200, activation="relu"))
             elif i == n_layers - 1:
                 # last layer
-                model.add(cell(units, return_sequences=False))
+                model.add(Dense(200, activation="relu"))
             else:
                 # hidden layers
-                model.add(cell(units, return_sequences=True))
+                model.add(Dense(200, activation="relu"))
             # add dropout after each layer
             model.add(Dropout(dropout))
         model.add(Dense(1, activation="sigmoid"))

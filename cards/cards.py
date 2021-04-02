@@ -1,3 +1,7 @@
+'''
+
+'''
+
 import random
 import numpy as np
 
@@ -118,8 +122,8 @@ class Situation:
         enlst = [lst[x] for x in range(menum, menum+ennum)]
         melst.sort()
         enlst.sort()
-        self.melst = Cards([id[x] for x in melst])
-        self.enlst = Cards([id[x] for x in enlst])
+        self.melst = Cards(melst)
+        self.enlst = Cards(enlst)
 
     @property
     def clearzero(self):
