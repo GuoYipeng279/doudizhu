@@ -1,7 +1,7 @@
-import tensorflow as tf
-from tensorflow.keras.models import Sequential, Model
+# import tensorflow as tf
+from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Flatten, LSTM, Dense, Dropout, Bidirectional, Embedding, Input, GlobalAveragePooling2D, Conv2D, MaxPooling2D
-from tensorflow import keras
+# from tensorflow import keras
 import numpy as np
 from tensorflow.keras.callbacks import Callback
 from sklearn.metrics import f1_score, precision_score, recall_score, confusion_matrix
@@ -9,13 +9,13 @@ from sklearn.metrics import f1_score, precision_score, recall_score, confusion_m
 
 class Model:
     '''神经网络模型'''
-    def __init__(self, n_layers=2, loss="binary_crossentropy", optimizer="rmsprop"):  # noqa E501
+    def __init__(self, n_layers=3, loss="binary_crossentropy", optimizer="rmsprop"):  # noqa E501
         model = Sequential()
-        model.add(Flatten())
+        # model.add(Flatten())
         for i in range(n_layers):
             if i == 0:
                 # first layer
-                model.add(Dense(200, activation="relu"))
+                model.add(Dense(200, activation="relu", input_shape=(200,)))
             elif i == n_layers - 1:
                 # last layer
                 model.add(Dense(200, activation="relu"))
@@ -23,7 +23,7 @@ class Model:
                 # hidden layers
                 model.add(Dense(200, activation="relu"))
             # add dropout after each layer
-            model.add(Dropout(dropout))
+            # model.add(Dropout(dropout))
         model.add(Dense(1, activation="sigmoid"))
         model.compile(loss=loss, metrics=["binary_accuracy"], optimizer=optimizer)
         model.summary()

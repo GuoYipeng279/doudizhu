@@ -23,7 +23,7 @@ class Card:
             self.typ = 0
         else:
             lab -= 2
-            self.num = lab // 4
+            self.num = lab // 4 + 2
             self.typ = lab % 4
 
     def __str__(self):
@@ -36,6 +36,7 @@ class Legal:
     '''具体合法牌型'''
     def __init__(self, card_array, multiple, auxi, auxmul):
         '''输入主牌数组，主牌重复数，带牌数组，带牌重复数
+        例如，三个K带对2，是([K],3,[2],2)
         创建具体牌型，以及需求指针列表
         '''
         self.card_array, self.multiple, self.auxi, self.auxmul \
@@ -79,6 +80,9 @@ class Legal:
             return str([Card.nums[i] for i in self.card_array]) + '飞机'
         return 'cards'
 
+    def __repr__(self):
+        return str(self)
+
     @property
     def arr(self):
         return 0
@@ -113,13 +117,14 @@ class Situation:
         maxi = 27
         lst = list(range(0, 54))
         random.shuffle(lst)
-        menum = ennum = random.randint(1, maxi)
-        if random.randint(0, 1) == 0:
-            menum = maxi
-        else:
-            ennum = maxi
-        melst = [lst[x] for x in range(0, menum)]
-        enlst = [lst[x] for x in range(menum, menum+ennum)]
+        # menum = ennum = random.randint(1, maxi)
+        # if random.randint(0, 1) == 0:
+        #     menum = maxi
+        # else:
+        #     ennum = maxi
+        menum = ennum = maxi
+        melst = [Card(lst[x]).num for x in range(0, menum)]
+        enlst = [Card(lst[x]).num for x in range(menum, menum+ennum)]
         melst.sort()
         enlst.sort()
         self.melst = Cards(melst)
@@ -181,12 +186,21 @@ class Cards:
         '''输入持牌情况（数列）
         生成所有具体牌型，并写入固定需求表
         '''
-        self.take = np.zeros(15)
+        self.take = np.zeros(15, dtype=int)
         for i in take:
             self.IOD(i, 'in')
         self.table = [[[] for i in range(4)] for j in range(15)]
         abstract = self.getPossible()
-        self.specific = set([self.translate(i) for i in abstract])
+        specific = [self.translate(i) for i in abstract]
+        self.specific = set(specific)
+
+    def __str__(self):
+        ret = ''
+        for i, elm in enumerate(self.take):
+            for j in range(elm):
+                ret += Card.nums[i]
+                ret += ' '
+        return ret
 
     @property
     def matr(self):
@@ -200,14 +214,18 @@ class Cards:
     def _IOD(fak, num, typ, n):
         if typ == 'out':
             fak[num] -= n
+            return
         elif typ == 'in':
             fak[num] += n
+            return
         elif typ == 'det':
             return fak[num] > n
+        else:
+            return
 
     def IOD(self, num, typ, n=1):
         '''typ=抓取in，打出out，检测det'''
-        self._IOD(self.take, num, typ, n)
+        return self._IOD(self.take, num, typ, n)
 
     def getPossible(self, now=(0, 0, 0, 0)):
         '''初始化用，当前持牌面对当前抽象牌型的所有可选抽象出牌
@@ -238,6 +256,8 @@ class Cards:
                             lst.append((j, count[j], i, 2))
                 else:
                     count[j] = 0
+        # print('debug')
+        # print(lst)
         if now[1] == 0:
             return lst
         otp = [(0, 0, 0, 0)]  # 若当前有牌型，则可选择不出，否则不可不出牌
@@ -306,7 +326,7 @@ class Cards:
             legal = Legal(main, me[0]+1, i, me[3])
             news.append(legal)
             for j in legal.upper:
-                self.table[j[0]][j[1]].append(legal)  # 将具体牌型加入需求表
+                self.table[j[0]][j[1]-1].append(legal)  # 将具体牌型加入需求表
         return news  # （主牌型，叠张，连带牌型，连带张）
 
     def Out(self, legal):
@@ -326,3 +346,5 @@ class Cards:
                     toRem.append(k)
         # 去除由于出牌造成的可出牌型减少
         self.specific = self.specific.difference(set(toRem))
+
+# a=Situation().enlst.table
