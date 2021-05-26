@@ -15,7 +15,7 @@ class Model:
         for i in range(n_layers):
             if i == 0:
                 # first layer
-                model.add(Dense(200, activation="relu", input_shape=(200,)))
+                model.add(Dense(200, activation="relu", input_shape=(139,)))
             elif i == n_layers - 1:
                 # last layer
                 model.add(Dense(200, activation="relu"))

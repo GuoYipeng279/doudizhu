@@ -1,1 +1,1 @@
-from .cards import Card, Legal, Situation, Cards  # noqa F401
+from .cards import Card, Legal, Cards  # noqa F401
