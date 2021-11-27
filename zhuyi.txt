@@ -1,0 +1,2 @@
+D:/study/uni notes/08/trai/self/doudizhu/cpu/2021-09-04_01-37-32/2021-09-04_01-42-47_model.h5
+截断循环时注意local变量的承接

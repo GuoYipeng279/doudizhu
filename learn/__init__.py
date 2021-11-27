@@ -1,1 +1,1 @@
-from .learn import Model, Metrics
+from .learn import Model, Binary

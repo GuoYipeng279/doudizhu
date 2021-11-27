@@ -1,0 +1,8 @@
+tensorboard --logdir tb_dir
+source activate tensorflow
+rm -rf ./tb_dir
+http://localhost:6006/
+
+
+
+D:\study\uni notes\08\trai\self\doudizhu\cpu\2021-09-04_01-37-32\2021-09-04_01-42-47_model.h5

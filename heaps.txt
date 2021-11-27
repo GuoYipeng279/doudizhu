@@ -1,0 +1,84 @@
+
+    @staticmethod
+    def carding2(selfs, start=[Legal()], maxi=20):
+        '''正常轮流出牌，start为具体牌型，输出胜负结果或预判分数，堆流程，对手固定'''
+        pq = []
+        searching = []
+        points = []
+        previous = []
+        nexts = []
+        cur_rec = []
+        count = []
+        high = []
+        recording = []
+        for i in range(len(selfs)):
+            selfs[i].current = start
+            selfs[i].point = selfs[i].score
+            pq.append([selfs[i]])  # 建堆
+            searching.append([selfs[i]])
+            points.append([-0.900 for i in range(maxi)])
+            previous.append([None for i in range(maxi)])
+            nexts.append([[] for i in range(maxi)])
+            cur_rec.append([[None, None] for i in range(maxi)])
+            selfs[i].num_situ.append(0)
+            previous[i][0] = -1
+            count.append(0)
+            high.append(0.100)
+            recording.append('')
+        for at in range(len(selfs)):
+            while pq[at] and count[at] < maxi:
+                sitning = heapq.heappop(pq[at])
+                highests = sitning.melst.judge(sitning.current, num=-1, at=at)
+                code = sitning.num_situ
+                for i in highests:
+                    subsit = deepcopy(sitning)
+                    subsit.into(searching)
+                    sub_code = subsit.num_situ
+                    nexts[code].append(sub_code)
+                    while sub_code >= len(points):
+                        points.append(-0.900)
+                        previous.append(None)
+                        nexts.append([])
+                        cur_rec.append([None, None])
+                    previous[sub_code] = code
+                    subsit.point = i[0]
+                    subsit.current = i[1]
+                    cur_rec[sub_code][0] = i[1]
+                    if i[1] == '结束':
+                        cur_rec[sub_code][0] = '输'
+                        points[sub_code] = 0.100
+                        continue
+                    subsit.melst.Out(i[1])
+                    points[sub_code] = subsit.point
+                    heapq.heappush(pq, subsit)
+
+                    subsit.exch()
+                    sub_high = subsit.melst.judge(
+                        subsit.current, num=1, brain_ind=1)[0]
+                    if sub_high[1] == '结束':
+                        cur_rec[sub_code][1] = '赢'
+                        points[sub_code] = 0.900
+                        subsit.exch()
+                        pq = None
+                        break
+                    subsit.melst.Out(sub_high[1])
+                    subsit.current = sub_high[1]
+                    cur_rec[sub_code][1] = sub_high[1]
+                    subsit.exch()
+                count += len(highests)
+                if count >= maxi:
+                    break
+        champ = -1
+        for i, j in enumerate(points):
+            if j >= 0.100 and not nexts[i] and high <= j:
+                champ = i
+                high = j
+        seq = []
+        while previous[champ] >= 0:
+            seq.append(champ)
+            champ = previous[champ]
+        seq.reverse()
+        for i in seq:
+            recording += str(cur_rec[i][0]) + ' '
+            recording += str(cur_rec[i][1]) + ' '
+        return high, recording, cur_rec[seq[0]][0]

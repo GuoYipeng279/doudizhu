@@ -26,6 +26,15 @@ class Card:
                 self.num = lab // 4 + 2
                 self.typ = lab % 4
 
+    @staticmethod
+    def to_int(char):
+        for i, j in enumerate(Card.nums):
+            if j == char:
+                if i < 2:
+                    return i
+                else:
+                    return 2 + 4*(i-2)
+
     def __str__(self):
         if self.num < 2:
             return Card.nums[self.num]
@@ -62,8 +71,17 @@ class Legal:
             self.multiple = 1
             self.auxi = []
             self.auxmul = 0
-        self.upper = [(i, self.multiple) for i in self.card_array]
-        self.upper.extend([(i, self.auxmul) for i in self.auxi])
+        # 2021-9-9 fix bug: AAA带A需求问题
+        self.upper = []
+        repetition = dict()
+        for i in self.card_array:
+            repetition[i] = len(self.upper)
+            self.upper.append([i, self.multiple])
+        for i in self.auxi:
+            if i in repetition:
+                self.upper[repetition[i]][1] += self.auxmul
+            else:
+                self.upper.append([i, self.auxmul])
         self.stillin = True  # Flag: 该牌型是否已被打出，因而已不存在
 
     def __str__(self):
@@ -104,6 +122,10 @@ class Legal:
 
     def __repr__(self):
         return str(self)
+
+    def __hash__(self):
+        return hash(str(self.card_array) + str(self.multiple) +
+                    str(self.auxi) + str(self.auxmul))
 
     @staticmethod
     def abstr(tup):
@@ -174,6 +196,9 @@ class Legal:
             return False  # 不匹配或不够大
         return True  # 可压
 
+    def __lt__(self, other):
+        return Legal.larger(other.typ, self.typ)
+
 
 class Cards:
     '''持牌情况'''
@@ -201,6 +226,7 @@ class Cards:
             specific.extend(self.translate(i))
         self.specific = set(specific)
         self.out_stack = []
+        self.Out_Stack = []
         self.empty = False
 
     def __str__(self):
@@ -211,6 +237,9 @@ class Cards:
                 ret += ' '
         return ret
 
+    def __repr__(self):
+        return str(self)
+
     @property
     def matr(self):
         otp = list(np.zeros((15, 4), dtype=int))
@@ -219,12 +248,17 @@ class Cards:
                 otp[i][j] = 1
         return otp
 
-    @staticmethod
-    def _IOD(fak, num, typ, n, bk):
+    def _IOD(self, fak, num, typ, n, bk):
         if typ == 'out':
             fak[num] -= n
             if fak[num] < 0:
                 print('no')
+                print(bk)
+                print(self.supervise)
+                print(self.take)
+                print(self.specific)
+                print(self.parent.desc)
+                print([][0])
             return
         elif typ == 'in':
             fak[num] += n
@@ -234,9 +268,9 @@ class Cards:
         else:
             return
 
-    def IOD(self, num, typ, n=1):
+    def IOD(self, num, typ, n=1, card=None):
         '''typ=抓取in，打出out，检测det'''
-        return self._IOD(self.take, num, typ, n, not self.empty)
+        return self._IOD(self.take, num, typ, n, card)
 
     def getPossible(self, **kwargs):
         '''初始化用，当前持牌面对当前抽象牌型的所有可选抽象出牌
@@ -262,16 +296,23 @@ class Cards:
                     toadd = (j, 1, i, 0)
                     lst.append(toadd)  # 单，对，三，炸
                     if j > 1:
-                        lst.append((j, 1, i, 1))
-                        lst.append((j, 1, i, 2))
+                        other_max = 0
+                        for e, k in enumerate(self.take):
+                            if e != i:
+                                other_max = max(k, other_max)
+                        if other_max > 0:
+                            lst.append((j, 1, i, 1))
+                        if other_max > 1:
+                            lst.append((j, 1, i, 2))
                     count[j] += 1
                     if count[j] >= conse[j]:
                         for k in range(count[j], conse[j]-1, -1):
                             toadd = (j, k, i, 0)
                             lst.append(toadd)  # 顺，连对，飞机不带
-                            if j > 1:
-                                lst.append((j, k, i, 1))
-                                lst.append((j, k, i, 2))
+                            # 飞机部分，待完成
+                            # if j > 1:
+                            #     lst.append((j, k, i, 1))
+                            #     lst.append((j, k, i, 2))
                 else:
                     count[j] = 0
         # print('debug')
@@ -356,14 +397,19 @@ class Cards:
         return set(news)  # （主牌型，叠张，连带牌型，连带张）
 
     def Out(self, legal):
-        '''具体出牌函数，将处理需求池，因而难以可逆'''
+        '''具体出牌函数，将处理需求池，因而难以可逆，20210618：仍尝试可逆'''
         self.supervise.append(("Out", legal))
         toRem = set()
+        recording = dict()
         for i in legal.card_array:  # 主牌型打出
             loss = range(self.take[i]-legal.multiple, self.take[i])
             for j in loss:
                 while self.table[i][j]:
                     outing = self.table[i][j].pop()
+                    if outing in recording:
+                        recording[outing].add((i, j))
+                    else:
+                        recording[outing] = set([(i, j)])
                     if outing.stillin:
                         outing.stillin = False  # 标记打出
                         toRem.add(outing)
@@ -373,6 +419,10 @@ class Cards:
             for j in loss:
                 while self.table[i][j]:
                     outing = self.table[i][j].pop()
+                    if outing in recording:
+                        recording[outing].add((i, j))
+                    else:
+                        recording[outing] = set([(i, j)])
                     if outing.stillin:
                         outing.stillin = False  # 标记打出
                         toRem.add(outing)
@@ -388,10 +438,28 @@ class Cards:
         if len(self.relation) == 0:
             self.empty = True
         self.specific = self.specific.difference(toRem)
+        self.Out_Stack.append((recording, toRem, legal))
         return len(self.specific), ori_num
 
     def Ret(self):
-        pass
+        recording, toAdd, legal = self.Out_Stack.pop()
+        self.supervise.append(("Ret", legal))
+        for i in legal.card_array:
+            self.IOD(i, 'in', legal.multiple)
+        for i in legal.auxi:
+            self.IOD(i, 'in', legal.auxmul)
+        for i in recording:
+            for j in recording[i]:
+                self.table[j[0]][j[1]].append(i)
+        self.empty = False
+        self.specific = self.specific.union(toAdd)
+        for i in toAdd:
+            t = i.typ
+            t = (t[0], t[1], t[3])
+            i.stillin = True
+            if t not in self.relation:
+                self.relation[t] = set()
+            self.relation[t].add(i)
 
     def out(self, legal):
         self.supervise.append(("out", legal))
@@ -409,9 +477,6 @@ class Cards:
         for i in legal.auxi:
             self.IOD(i, 'in', legal.auxmul)
 
-    def get_after(self, legal, f):
-        '''在预计出牌后分析情况'''
-        self.out(legal)
-        otp = f()
-        self.ret()
-        return otp
+
+if __name__ == '__main__':
+    print(Card.to_int('K'))

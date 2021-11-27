@@ -1,0 +1,33 @@
+    def carding(self, start=Legal(), tree=[], recording='',
+                step=0, high=dict()):
+        '''正常轮流出牌，start为具体牌型，输出胜负结果或预判分数，固定树流程'''
+        self.current = start
+        point = 0.5
+        if self.enlst.empty:
+            point = 0.100  # 已失败，这里不论敌我，具体由收集器处理
+            high[point] = None
+        else:
+            highests = self.melst.judge(self.current, num=tree[0])
+            if len(tree) <= 1:
+                highing = highests[0][0]
+                high[highing] = None
+            else:
+                for i in highests:
+                    # if repr(i[1]) == '对K':
+                    #     print('testo')
+                    self.melst.Out(i[1])
+                    self.current = i[1]
+                    name = self.melst.condition(*self.transfer())
+                    high[name] = dict()
+                    new_high = high[name]
+                    recording += ' {我' if step % 2 == 0 else ' {敌'
+                    recording += str(self.current)
+                    step += 1
+                    self.melst, self.enlst = self.enlst, self.melst  # 交换出牌方
+                    recording = self.carding(self.current, tree[1:], recording,
+                        step, new_high)  # noqa E231
+                    recording += '}'
+                    step -= 1
+                    self.melst, self.enlst = self.enlst, self.melst  # 交换出牌方
+                    self.melst.Ret()
+        return recording
